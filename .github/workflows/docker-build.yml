@@ -1,0 +1,23 @@
+name: Docker Build and Push
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+      
+    - name: Build Docker image
+      run: docker build -t hello-web .
+      
+    - name: Test Docker image
+      run: |
+        docker run -d -p 8080:80 --name test-container hello-web
+        sleep 5
+        curl -s --retry 5 --retry-delay 5 http://localhost:8080 | grep "Hello, World!" 
