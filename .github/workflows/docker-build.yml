@@ -20,4 +20,43 @@ jobs:
       run: |
         docker run -d -p 8080:80 --name test-container hello-web
         sleep 5
-        curl -s --retry 5 --retry-delay 5 http://localhost:8080 | grep "Hello, World!" 
+        curl -s --retry 5 --retry-delay 5 http://localhost:8080 | grep "Hello, World!"
+        
+    - name: Login to Docker Hub
+      if: github.event_name != 'pull_request'
+      uses: docker/login-action@v1
+      with:
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+    
+    - name: Push Docker image
+      if: github.event_name != 'pull_request'
+      run: |
+        docker tag hello-web ${{ secrets.DOCKER_HUB_USERNAME }}/hello-web:latest
+        docker push ${{ secrets.DOCKER_HUB_USERNAME }}/hello-web:latest
+        
+  deploy:
+    needs: build
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Deploy to EC2
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          # 도커 이미지 가져오기
+          docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/hello-web:latest
+          
+          # 기존 컨테이너 중지 및 삭제
+          docker stop hello-web-container || true
+          docker rm hello-web-container || true
+          
+          # 새 컨테이너 실행
+          docker run -d -p 80:80 --name hello-web-container ${{ secrets.DOCKER_HUB_USERNAME }}/hello-web:latest
+          
+          # 사용하지 않는 이미지 정리
+          docker system prune -af 
