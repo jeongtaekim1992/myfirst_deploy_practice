@@ -55,8 +55,8 @@ jobs:
           docker stop hello-web-container || true
           docker rm hello-web-container || true
           
-          # 새 컨테이너 실행
-          docker run -d -p 80:80 --name hello-web-container ${{ secrets.DOCKER_HUB_USERNAME }}/hello-web:latest
+          # 새 컨테이너 실행 (8080 포트 사용)
+          docker run -d -p 8080:80 --name hello-web-container ${{ secrets.DOCKER_HUB_USERNAME }}/hello-web:latest
           
           # 사용하지 않는 이미지 정리
           docker system prune -af 
