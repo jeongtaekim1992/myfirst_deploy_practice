@@ -1,0 +1,8 @@
+services:
+  hello:
+    build: .
+    ports:
+      - "8080:80"
+    volumes:
+      - ./hello.html:/usr/local/apache2/htdocs/index.html
+    restart: always 
